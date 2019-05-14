@@ -1,0 +1,157 @@
+---
+- hosts: all
+  remote_user: tantn
+  become: yes
+  become_user: root
+  become_method: su
+  vars_prompt:
+    name: host_name
+    prompt: Enter the target HostName
+    private: no  
+  tasks:
+    - hostname:
+        name: "{{ host_name }}"
+    - selinux :
+        state: disabled
+  
+    - name: Install Epel Repo
+      yum: 
+        name: epel-release 
+        state: present
+   
+    - name: Update Package
+      yum: 
+        name: "*"
+        state: latest   
+      
+    - name: Install Development Tools
+      yum: 
+        name: "@Development Tools"
+        state: latest
+ 
+    - name: Install ntpdate
+      yum: 
+        name: ntpdate 
+        state: latest
+
+    - name: cron ntpdate
+      cron:
+        name: "ntp update"
+        minute: "*/5"
+        job: "/usr/bin/ntpdate -u vn.pool.ntp.org"
+      
+ #SNMP     
+    - name: Install snmp packages
+      yum: 
+        name: net-snmp 
+        state: latest
+    - name: Insert coromunity snmpd
+      blockinfile:
+        path: /etc/snmp/snmpd.conf
+        insertafter: "rocommunity"
+        content: |
+          rocommuniti private 192.168.1.1
+    - name: Start & Enable SNMPD
+      systemd:
+        name: snmpd
+        state: started
+        enabled: true
+ #Ulimit
+    - name: nofile soft limit 
+      pam_limits:
+        domain: '*'
+        limit_type: soft
+        limit_item: nofile
+        value: 65535
+    - name: hard nofile limits
+      pam_limits:
+        domain: '*'
+        limit_type: hard
+        limit_item: nofile
+        value: 65535
+    - name: modify nproc hard limit
+      pam_limits:
+        domain: '*'
+        limit_type: hard
+        limit_item: nproc
+        value: 65535
+        use_max: yes      
+    - name: modify nproc soft limit
+      pam_limits:
+        domain: '*'
+        limit_type: soft
+        limit_item: nproc
+        value: 65535
+        use_max: yes        
+ #Sysctl
+    - sysctl:
+        name: vm.swappiness
+        value: 10
+        state: present
+    - sysctl:
+        name: net.core.rmem_max
+        value: 8388608
+        state: present
+    - sysctl:
+        name: net.core.wmem_max
+        value: 8388608
+        state: present
+    - sysctl:
+        name: net.core.rmem_default
+        value: 65536
+        state: present
+    - sysctl:
+        name: net.core.wmem_default
+        value: 65536
+        state: present
+    - sysctl:
+        name: net.ipv4.tcp_rmem
+        value: '@4096 87380 8388608'
+        state: present
+    - sysctl:
+        name: net.ipv4.tcp_wmem
+        value: '@4096 87380 8388608'
+        state: present
+    - sysctl:
+        name: net.ipv4.tcp_mem
+        value: '@8388608 8388608 8388608'
+        state: present
+    - sysctl:
+        name: net.ipv4.route.flush
+        value: 1
+        state: present
+ #Install Jenkins
+    - name: Install JDK
+      yum: 
+        name: java-1.8.0-openjdk
+        state: present
+    - name: Download jenkins.repo
+      get_url: 
+        url: http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+        dest: /etc/yum.repos.d/jenkins.repo
+    - name: Import Jenkins Key
+      rpm_key:
+        state: present
+        key: https://jenkins-ci.org/redhat/jenkins-ci.org.key
+    - name: Install Jenkins
+      yum:
+        name: jenkins
+        state: present
+    - name: Start & Enable Jenkins
+      systemd:
+        name: jenkins
+        state: started
+        enabled: true
+    - name: Sleep for 30 seconds and continue with play
+      wait_for: timeout=30
+    - name: Get init password Jenkins
+      shell: cat /var/lib/jenkins/secrets/initialAdminPassword
+      changed_when: false
+      register: result
+    - name: Print init password Jenkins
+      debug:
+        var: result.stdout
+        
+
+       
+...
