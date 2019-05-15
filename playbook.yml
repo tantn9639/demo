@@ -120,6 +120,21 @@
         name: net.ipv4.route.flush
         value: 1
         state: present
+    - sysctl:
+        name: net.ipv4.tcp_sack
+        value: 1
+        state: present
+
+ #Firewalld
+    - name: Start & Enable Firewalld
+      systemd:
+        name: firewalld
+        state: started
+        enabled: true   
+    - firewalld:
+        source: 192.168.2.1/32   #admin server
+        zone: trust
+        state: enabled
  #Install Jenkins
     - name: Install JDK
       yum: 
