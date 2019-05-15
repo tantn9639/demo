@@ -1,9 +1,9 @@
 pipeline {
-    environment {
+  environment {
     def app_name = "python_demo_app"
     def app
     }  
-  agent 
+  agent any
     stages {
       stage ('Build') {
         steps {
