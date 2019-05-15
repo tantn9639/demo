@@ -1,23 +1,17 @@
 pipeline {
-  environment {
-    def app_name = "python_demo_app"
-    def app
-    }  
-  agent any
-    stages {
-      stage ('Build') {
-        steps {
-          app = docker.build(app_name) 
-          }
+  agent  { dockerfile true }
+  stages {
+    stage ('Build') {
+      steps {
+          sh 'python -version'
         }
-      stage ('Test') {
-        steps {
-          app.inside{
+        }
+    stage ('Test') {
+      steps {
             sh 'demo.py'
-           }
         }
-      stage('Push image') {
-        steps {
+    stage('Push image') {
+      steps {
           sh 'echo PUSH'
           }
         }
