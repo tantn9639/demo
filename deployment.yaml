@@ -12,5 +12,5 @@ spec:
     spec:
       containers:
       - name: __APP_NAME__-ctr
-        image: __IMAGE__
+        image: __IMAGE__:__VERSION__
         imagePullPolicy: Always
