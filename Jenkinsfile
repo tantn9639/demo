@@ -4,24 +4,23 @@ pipeline {
     def app
     }  
   agent 
-  stages {
-    stage ('Build') {
-      steps {
-        app = docker.build(app_name) 
-      }
-    }
-    stage ('Test') {
+    stages {
+      stage ('Build') {
         steps {
-        app.inside{
+          app = docker.build(app_name) 
+          }
+        }
+      stage ('Test') {
+        steps {
+          app.inside{
             sh 'demo.py'
+           }
         }
-        }
-     stage('Push image') {
+      stage('Push image') {
         steps {
-            sh 'echo PUSH'
-        }
+          sh 'echo PUSH'
+          }
         }
     }
     }
   }
-}
